@@ -31,5 +31,38 @@ namespace OpenNETCF.DFDS.Test
             settings.LocalStore = new MemoryStore();
             var svc = new DeviceFirstDataService(settings);
         }
+
+        [TestMethod]
+        [ExpectedException(typeof(ValidationException))]
+        public void InvalidRegistrationTest1()
+        {
+            var settings = new DfdsServiceSettings();
+            settings.LocalStore = new MemoryStore();
+            settings.RemoteStore = new NopRemoteStore();
+            var svc = new DeviceFirstDataService(settings);
+            svc.Register<Person>(null);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ValidationException))]
+        public void InvalidRegistrationTest2()
+        {
+            var settings = new DfdsServiceSettings();
+            settings.LocalStore = new MemoryStore();
+            settings.RemoteStore = new NopRemoteStore();
+            var svc = new DeviceFirstDataService(settings);
+            svc.Register<Person>(string.Empty);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ValidationException))]
+        public void InvalidRegistrationTest3()
+        {
+            var settings = new DfdsServiceSettings();
+            settings.LocalStore = new MemoryStore();
+            settings.RemoteStore = new NopRemoteStore();
+            var svc = new DeviceFirstDataService(settings);
+            svc.Register<Person>("    ");
+        }
     }
 }

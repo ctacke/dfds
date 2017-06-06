@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace OpenNETCF.DFDS.Test
 {
@@ -16,7 +17,7 @@ namespace OpenNETCF.DFDS.Test
             m_store = new Dictionary<Type, Dictionary<object, object>>();
         }
 
-        public T Get<T>(object identifier)
+        public T GetSingle<T>(object identifier)
             where T : class, new()
         {
             var t = typeof(T);
@@ -31,6 +32,22 @@ namespace OpenNETCF.DFDS.Test
                     return null;
                 }
                 return m_store[t][identifier] as T;
+            }
+        }
+
+        public T[] GetMultiple<T>()
+            where T : class, new()
+        {
+            var t = typeof(T);
+
+            lock (m_store)
+            {
+                if (!m_store.ContainsKey(t))
+                {
+                    return null;
+                }
+
+                return m_store[t].Values.Select(e => e as T).ToArray();
             }
         }
 
@@ -101,6 +118,20 @@ namespace OpenNETCF.DFDS.Test
             }
         }
 
+        public void RemoveAll<T>()
+            where T : class
+        {
+            var t = typeof(T);
+            lock (m_store)
+            {
+                if (!m_store.ContainsKey(t))
+                {
+                    return;
+                }
+                m_store[t].Clear();
+            }
+        }
+
         public int Count<T>()
         {
             var t = typeof(T);
@@ -112,6 +143,33 @@ namespace OpenNETCF.DFDS.Test
                 }
                 return m_store[t].Count;
             }
+        }
+
+        public async Task<T> GetSingleAsync<T>(object identifier)
+            where T : class, new()
+        {
+            return await Task.Run(() => { return GetSingle<T>(identifier); });
+        }
+
+        public async Task<T[]> GetMultipleAsync<T>() where T : class, new()
+        {
+            return await Task.Run(() => { return GetMultiple<T>(); });
+        }
+
+        public async Task<T> StoreAsync<T>(T item, PropertyInfo identifierProperty, object identifierValue)
+        {
+            return await Task.Run(() => { return Store(item, identifierProperty, identifierValue); });
+        }
+
+        public async Task RemoveAsync<T>(PropertyInfo identifierProperty, object identifierValue)
+        {
+            await Task.Run(() => { Remove<T>(identifierProperty, identifierValue); });
+        }
+
+        public async Task RemoveAllAsync<T>()
+            where T : class
+        {
+            await Task.Run(() => { RemoveAll<T>(); });
         }
     }
 }
