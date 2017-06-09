@@ -14,8 +14,9 @@ namespace OpenNETCF.Data
         public event EventHandler<GenericEventArgs<Type>> SyncCompleted;
 
         private bool m_stop;
-        private Dictionary<Type, CircularBuffer<object>> m_pushBuffers;
         private int m_syncTick;
+        private Dictionary<Type, DateTime> m_pullTimestamps = new Dictionary<Type, DateTime>();
+        private Dictionary<Type, DateTime> m_pushTimestamps = new Dictionary<Type, DateTime>();
 
         private void StartSync()
         {
@@ -63,9 +64,6 @@ namespace OpenNETCF.Data
             Task.Run(async () => await SyncProc());
         }
 
-        private Dictionary<Type, DateTime> m_pullTimestamps = new Dictionary<Type, DateTime>();
-        private Dictionary<Type, DateTime> m_pushTimestamps = new Dictionary<Type, DateTime>();
-
         private void SyncType(Type t)
         {
             switch (m_settings.SyncBehavior)
@@ -89,7 +87,45 @@ namespace OpenNETCF.Data
 
         private void PushType(Type t)
         {
-            // TODO:
+            Type[] typeList;
+
+            // TODO: add support for some idea of type priority (i.e. those that should go first)?
+
+            // get a copy of the types - don't lock that buffer for too long
+            lock (m_transmitBuffers)
+            {
+                typeList = m_transmitBuffers.Keys.ToArray();
+            }
+
+            foreach (var type in typeList)
+            {
+                while (m_transmitBuffers[type].Count > 0)
+                {
+                    try
+                    {
+                        // we Peek and Dequeue on uccess to keep the items in the original order rather than Dequeue and Enqueue on fail
+                        var entity = m_transmitBuffers[type].Peek();
+
+                        if (entity.IsInsert)
+                        {
+                            RemoteStore.Insert(entity.Entity);
+                        }
+                        else
+                        {
+                            RemoteStore.Update(entity.Entity);
+                        }
+                        m_transmitBuffers[type].Dequeue();
+                    }
+                    catch
+                    {
+                        // leave it in the queue, but abandon syncing this type
+                        
+                        // TODO: add in some form of notification that this happened
+
+                        break;
+                    }
+                }
+            }
         }
 
         /// <summary>

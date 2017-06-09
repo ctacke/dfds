@@ -15,9 +15,12 @@ namespace OpenNETCF.DFDS.Test
             return null;
         }
 
-        public T Store<T>(T item, PropertyInfo identifierProperty, object identifierValue)
+        public void Insert<T>(T item)
         {
-            return default(T);
+        }
+
+        public void Update<T>(T item)
+        {
         }
     }
 }

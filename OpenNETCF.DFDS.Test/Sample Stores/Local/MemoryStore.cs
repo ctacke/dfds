@@ -77,9 +77,11 @@ namespace OpenNETCF.DFDS.Test
             return items;
         }
 
-        public T Store<T>(T item)
+        public bool Store<T>(T item)
             where T : class
         {
+            bool isInsert = false;
+
             var t = item.GetType();
 
             Validate
@@ -107,7 +109,7 @@ namespace OpenNETCF.DFDS.Test
                 else
                 {
                     // this is an insert
-
+                    isInsert = true;
                     var ti = identifierValue.GetType();
 
                     // if the identifier is an integer, and is <= 0, we'll treat it as a "auto incrementing key" to be friendly
@@ -135,7 +137,7 @@ namespace OpenNETCF.DFDS.Test
                 }
             }
 
-            return item;   
+            return isInsert;   
         }
 
         public void Remove<T>(PropertyInfo identifierProperty, object identifierValue)
@@ -194,7 +196,7 @@ namespace OpenNETCF.DFDS.Test
             return await Task.Run(() => { return GetMultiple<T>(); });
         }
 
-        public async Task<T> StoreAsync<T>(T item)
+        public async Task<bool> StoreAsync<T>(T item)
             where T : class
         {
             return await Task.Run(() => { return Store(item); });

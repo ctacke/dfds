@@ -17,7 +17,6 @@ namespace OpenNETCF.DFDS.Test
 
         public SyncTests()
         {
-//            var people = new List<Person>();
             people.Add(new Person("John Doe"));
             people.Add(new Person("Jane Doe"));
             people.Add(new Person("Marie Smith"));
@@ -61,45 +60,47 @@ namespace OpenNETCF.DFDS.Test
         {
             var serverUri = "http://localhost:8081";
 
-            var server = new SimpleServer(serverUri,
-                getMethod: GetMultiplePeople);
-            server.Start();
-
-            var serializer = new DfdsJsonSerializer();
-
-            var settings = new DfdsServiceSettings();
-            settings.DefaultSyncPeriodSeconds = 5;
-            
-            settings.LocalStore = new MemoryStore();
-            settings.RemoteStore = new RestBasedStore(serverUri, serializer);
-
-            bool syncComplete = false;
-
-            var svc = new DeviceFirstDataService(settings);
-            svc.SyncCompleted += delegate { syncComplete = true; };
-
-            svc.Register<Person>("PersonID");
-            // local store will be empty
-            Assert.AreEqual(0, settings.LocalStore.Count<Person>());
-
-            // when sync happens, we'll have 3
-            while (!syncComplete)
+            using (var server = new SimpleServer(serverUri,
+                getMethod: GetMultiplePeople))
             {
-                Thread.Sleep(500);
+                server.Start();
+
+                DfdsJsonSerializer serializer = new DfdsJsonSerializer();
+
+                var settings = new DfdsServiceSettings();
+                settings.DefaultSyncPeriodSeconds = 5;
+
+                settings.LocalStore = new MemoryStore();
+                settings.RemoteStore = new RestBasedStore(serverUri, serializer);
+
+                bool syncComplete = false;
+
+                var svc = new DeviceFirstDataService(settings);
+                svc.SyncCompleted += delegate { syncComplete = true; };
+
+                svc.Register<Person>("PersonID");
+                // local store will be empty
+                Assert.AreEqual(0, settings.LocalStore.Count<Person>());
+
+                // when sync happens, we'll have 3
+                while (!syncComplete)
+                {
+                    Thread.Sleep(500);
+                }
+                syncComplete = false;
+
+                // initial population of the store is 3
+                Assert.AreEqual(3, settings.LocalStore.Count<Person>());
+
+                // the query above triggers an insert on the remote, local still will be 3
+                while (!syncComplete)
+                {
+                    Thread.Sleep(500);
+                }
+                syncComplete = false;
+
+                Assert.AreEqual(4, settings.LocalStore.Count<Person>());
             }
-            syncComplete = false;
-
-            // initial population of the store is 3
-            Assert.AreEqual(3, settings.LocalStore.Count<Person>());
-
-            // the query above triggers an insert on the remote, local still will be 3
-            while (!syncComplete)
-            {
-                Thread.Sleep(500);
-            }
-            syncComplete = false;
-
-            Assert.AreEqual(4, settings.LocalStore.Count<Person>());
         }
     }
 }

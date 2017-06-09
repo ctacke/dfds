@@ -17,7 +17,8 @@ namespace OpenNETCF.Data
         /// <returns>An array of entities or null if the query returns no result</returns>
         object[] GetMultiple(Type entityType, DateTime? lastRequest);
 
-        T Store<T>(T item, PropertyInfo identifierProperty, object identifierValue);
+        void Insert<T>(T item);
+        void Update<T>(T item);
     }
 
     public interface IDfdsLocalStore
@@ -28,8 +29,20 @@ namespace OpenNETCF.Data
         Task<T> GetSingleAsync<T>(object identifier) where T : class, new();
         T[] GetMultiple<T>() where T : class, new();
         Task<T[]> GetMultipleAsync<T>() where T : class, new();
-        T Store<T>(T item) where T : class;
-        Task<T> StoreAsync<T>(T item) where T : class;
+        /// <summary>
+        /// Stores an instance of and entity (either insert or update)
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="item"></param>
+        /// <returns><b>true</b> if the operation inserted a new instance, otherwise <b>false</b></returns>
+        bool Store<T>(T item) where T : class;
+        /// <summary>
+        /// Stores an instance of and entity (either insert or update)
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="item"></param>
+        /// <returns><b>true</b> if the operation inserted a new instance, otherwise <b>false</b></returns>
+        Task<bool> StoreAsync<T>(T item) where T : class;
         T[] StoreMultiple<T>(T[] items) where T : class;
         void Remove<T>(PropertyInfo identifierProperty, object identifierValue);
         Task RemoveAsync<T>(PropertyInfo identifierProperty, object identifierValue);

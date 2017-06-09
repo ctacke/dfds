@@ -10,7 +10,20 @@ namespace OpenNETCF.Data
 {
     public partial class DeviceFirstDataService : DisposableBase
 	{
-        private Dictionary<Type, CircularBuffer<object>> m_transmitBuffers = new Dictionary<Type, CircularBuffer<object>>();
+        private class TransmitObject
+        {
+            public TransmitObject(object entity, bool isInsert)
+            {
+                Entity = entity;
+                IsInsert = isInsert;
+            }
+
+            public bool IsInsert { get; set; }
+            public object Entity { get; set; }
+        }
+
+        private Dictionary<Type, CircularBuffer<TransmitObject>> m_transmitBuffers = new Dictionary<Type, CircularBuffer<TransmitObject>>();
+
         private AutoResetEvent m_txDataRead = new AutoResetEvent(false);
 
         public async Task<T> GetSingleAsync<T>(object identifier)
@@ -40,44 +53,68 @@ namespace OpenNETCF.Data
         public async Task<T> StoreAsync<T>(T item)
             where T : class
         {
-            var result = await m_settings.LocalStore.StoreAsync(item);
-            // TODO: was it an insert or update?
-            QueueForTransmit(item);
-            return result;
+            Validate
+                .Begin()
+                .ParameterIsNotNull(item, "item")
+                .Check();
+
+            var isInsert = await m_settings.LocalStore.StoreAsync(item);
+            QueueForTransmit(item, isInsert);
+            return item;
         }
 
         public T Store<T>(T item)
             where T : class
         {
-            var result = m_settings.LocalStore.Store(item);
-            // TODO: was it an insert or update?
-            QueueForTransmit(item);
-            return result;
+            Validate
+                .Begin()
+                .ParameterIsNotNull(item, "item")
+                .Check();
+
+            var isInsert = m_settings.LocalStore.Store(item);
+            QueueForTransmit(item, isInsert);
+            return item;
         }
 
-        private void QueueForTransmit(object item)
+        private void QueueForTransmit(object item, bool isInsert)
         {
             var t = item.GetType();
 
             lock (m_transmitBuffers)
             {
+                var entity = new TransmitObject(item, isInsert);
+
                 if (!m_transmitBuffers.ContainsKey(t))
                 {
-                    m_transmitBuffers.Add(t, new CircularBuffer<object>(m_settings.DefaultSendBufferDepth));
+
+                    // TODO: account for non-default buffer depth
+                    m_transmitBuffers.Add(t, new CircularBuffer<TransmitObject>(m_settings.DefaultSendBufferDepth));
                     // TODO: add high-water event watcher to force send, even if outside of a sync period
-                    m_txDataRead.Set();
                 }
+
+                m_transmitBuffers[t].Enqueue(entity);
+                m_txDataRead.Set();
             }
         }
 
         public async Task RemoveAsync<T>(object identifier)
         {
+            Validate
+                .Begin()
+                .ParameterIsNotNull(identifier, "identifier")
+                .Check();
+
             var pi = TypeIdentifierRegistrations[typeof(T)];
             await m_settings.LocalStore.RemoveAsync<T>(pi, identifier);
         }
 
         public void Remove<T>(object identifier)
         {
+            Validate
+                .Begin()
+                .ParameterIsNotNull(identifier, "identifier")
+                .Check();
+
             var pi = TypeIdentifierRegistrations[typeof(T)];
             m_settings.LocalStore.Remove<T>(pi, identifier);
         }
@@ -85,6 +122,11 @@ namespace OpenNETCF.Data
         public async Task RemoveAsync<T>(T item)
             where T : class
         {
+            Validate
+                .Begin()
+                .ParameterIsNotNull(item, "item")
+                .Check();
+
             // extract the identifier
             var pi = TypeIdentifierRegistrations[item.GetType()];
             var identifier = pi.GetValue(item);
@@ -94,6 +136,11 @@ namespace OpenNETCF.Data
         public void Remove<T>(T item)
             where T : class
         {
+            Validate
+                .Begin()
+                .ParameterIsNotNull(item, "item")
+                .Check();
+
             // extract the identifier
             var pi = TypeIdentifierRegistrations[item.GetType()];
             var identifier = pi.GetValue(item);
