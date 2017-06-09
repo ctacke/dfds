@@ -35,6 +35,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Constants\SyncPeriod.cs" />
+    <Compile Include="DeviceFirstDataService - Accessors.cs" />
+    <Compile Include="DeviceFirstDataService - Sync.cs" />
+    <Compile Include="DeviceFirstDataService - Registration.cs" />
     <Compile Include="DfdsServiceSettings.cs" />
     <Compile Include="Interfaces\IDfdsLocalStore.cs" />
     <Compile Include="DeviceFirstDataService.cs" />

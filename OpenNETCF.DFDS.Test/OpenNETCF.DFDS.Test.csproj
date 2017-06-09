@@ -35,8 +35,16 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\OpenNETCF.DFDS\packages\Newtonsoft.Json.10.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="OpenNETCF.Extensions, Version=1.0.17150.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\OpenNETCF.DFDS\packages\com.opennetcf.extensions.pcl.1.0.17150.0\lib\portable45-net45+win8+wpa81\OpenNETCF.Extensions.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="OpenNETCF.RestConnector, Version=1.0.17151.1, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\OpenNETCF.DFDS\packages\opennetcf-restconnector.1.0.17151.1\lib\portable-net45+netcore45+wpa81+wp8\OpenNETCF.RestConnector.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -54,9 +62,12 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="RemoteStoreTests.cs" />
     <Compile Include="Sample Stores\Local\MemoryStore.cs" />
     <Compile Include="Sample Stores\Remote\NopRemoteStore.cs" />
     <Compile Include="Sample Stores\Remote\RestBasedStore.cs" />
+    <Compile Include="SimpleServer.cs" />
+    <Compile Include="SyncTests.cs" />
     <Compile Include="StoreParameterTests.cs" />
     <Compile Include="Test Entities\Person.cs" />
     <Compile Include="LocalStoreTests.cs" />

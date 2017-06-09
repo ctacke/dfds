@@ -11,10 +11,25 @@ namespace OpenNETCF.DFDS.Test
     public class MemoryStore : IDfdsLocalStore
     {
         private Dictionary<Type, Dictionary<object, object>> m_store;
+        private DeviceFirstDataService m_dfds;
 
         public MemoryStore()
         {
             m_store = new Dictionary<Type, Dictionary<object, object>>();
+        }
+
+        public DeviceFirstDataService Parent
+        {
+            get { return m_dfds; }
+            set
+            {
+                Validate
+                    .Begin()
+                    .ParameterIsNotNull(value, "value")
+                    .Check();
+
+                m_dfds = value;
+            }
         }
 
         public T GetSingle<T>(object identifier)
@@ -51,9 +66,32 @@ namespace OpenNETCF.DFDS.Test
             }
         }
 
-        public T Store<T>(T item, PropertyInfo identifierProperty, object identifierValue)
+        public T[] StoreMultiple<T>(T[] items)
+            where T : class
+        {
+            foreach (var item in items)
+            {
+                Store(item);
+            }
+
+            return items;
+        }
+
+        public T Store<T>(T item)
+            where T : class
         {
             var t = item.GetType();
+
+            Validate
+                .Begin()
+                .ParameterIsNotNull(item, "item")
+                .IsTrue(Parent.TypeIdentifierRegistrations.ContainsKey(t))
+                .Check();
+
+            var identifierProperty = Parent.TypeIdentifierRegistrations[t];
+
+            var identifierValue = identifierProperty.GetValue(item);
+
             lock (m_store)
             {
                 if (!m_store.ContainsKey(t))
@@ -156,9 +194,10 @@ namespace OpenNETCF.DFDS.Test
             return await Task.Run(() => { return GetMultiple<T>(); });
         }
 
-        public async Task<T> StoreAsync<T>(T item, PropertyInfo identifierProperty, object identifierValue)
+        public async Task<T> StoreAsync<T>(T item)
+            where T : class
         {
-            return await Task.Run(() => { return Store(item, identifierProperty, identifierValue); });
+            return await Task.Run(() => { return Store(item); });
         }
 
         public async Task RemoveAsync<T>(PropertyInfo identifierProperty, object identifierValue)
