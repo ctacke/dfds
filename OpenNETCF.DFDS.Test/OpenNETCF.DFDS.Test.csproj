@@ -39,15 +39,16 @@
       <HintPath>..\OpenNETCF.DFDS\packages\Newtonsoft.Json.10.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="OpenNETCF.Extensions, Version=1.0.17150.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\OpenNETCF.DFDS\packages\com.opennetcf.extensions.pcl.1.0.17150.0\lib\portable45-net45+win8+wpa81\OpenNETCF.Extensions.dll</HintPath>
+    <Reference Include="OpenNETCF.Extensions, Version=1.0.17160.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\OpenNETCF.DFDS\packages\opennetcf-extensions-standard.1.0.17160.0\lib\netstandard1.1\OpenNETCF.Extensions.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="OpenNETCF.RestConnector, Version=1.0.17151.1, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\OpenNETCF.DFDS\packages\opennetcf-restconnector.1.0.17151.1\lib\portable-net45+netcore45+wpa81+wp8\OpenNETCF.RestConnector.dll</HintPath>
+    <Reference Include="OpenNETCF.RestConnector, Version=1.0.17160.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\OpenNETCF.DFDS\packages\opennetcf-restconnector.1.0.17160.0\lib\netstandard1.1\OpenNETCF.RestConnector.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <Choose>
     <When Condition="('$(VisualStudioVersion)' == '10.0' or '$(VisualStudioVersion)' == '') and '$(TargetFrameworkVersion)' == 'v3.5'">
@@ -67,6 +68,7 @@
     <Compile Include="Sample Stores\Remote\NopRemoteStore.cs" />
     <Compile Include="Sample Stores\Remote\RestBasedStore.cs" />
     <Compile Include="SimpleServer.cs" />
+    <Compile Include="SimpleServerMethods.cs" />
     <Compile Include="SyncTests.cs" />
     <Compile Include="StoreParameterTests.cs" />
     <Compile Include="Test Entities\Person.cs" />

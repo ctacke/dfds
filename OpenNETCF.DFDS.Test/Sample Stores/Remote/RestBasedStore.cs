@@ -13,6 +13,7 @@ namespace OpenNETCF.DFDS.Test
     public interface IDfdsSerializer
     {
         object Deserialize(string serializedString, Type objectType);
+        string Serialize(object entity);
     }
 
     public class DfdsJsonSerializer : IDfdsSerializer
@@ -20,6 +21,11 @@ namespace OpenNETCF.DFDS.Test
         public object Deserialize(string serializedString, Type objectType)
         {
             return JsonConvert.DeserializeObject(serializedString, objectType);
+        }
+
+        public string Serialize(object entity)
+        {
+            return JsonConvert.SerializeObject(entity);
         }
     }
 
@@ -67,19 +73,7 @@ namespace OpenNETCF.DFDS.Test
                 queryParameters = string.Format("?since={0}", lastRequest.Value.ToString("s"));
             }
 
-            // do we have a registered endpoint?
-            lock (m_registeredEndpoints)
-            {
-                if (m_registeredEndpoints.ContainsKey(t))
-                {
-                    endpoint = m_registeredEndpoints[t];
-                }
-                else
-                {
-                    // default to the class name is nothing is registered
-                    endpoint = t.Name;
-                }
-            }
+            endpoint = GetEndpointForType(t);
 
             try
             {
@@ -101,8 +95,30 @@ namespace OpenNETCF.DFDS.Test
         public void Insert<T>(T item)
         {
             // TODO: POST
+            var t = typeof(T);
+
+            var endpoint = GetEndpointForType(t);
+            var payload = m_serializer.Serialize(item);
+
+            m_connector.Post(endpoint, payload);
         }
 
+        private string GetEndpointForType(Type t)
+        {
+            // do we have a registered endpoint?
+            lock (m_registeredEndpoints)
+            {
+                if (m_registeredEndpoints.ContainsKey(t))
+                {
+                    return m_registeredEndpoints[t];
+                }
+                else
+                {
+                    // default to the class name is nothing is registered
+                    return t.Name;
+                }
+            }
+        }
         public void Update<T>(T item)
         {
             // TODO: PUT
