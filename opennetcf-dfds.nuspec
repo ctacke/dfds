@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+    <metadata>
+        <id>opennetcf-dfds</id>
+        <version>1.0.17162.0</version>
+        <title>OpenNETCF Device-First Data Service</title>
+        <authors>Chris Tacke</authors>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>An extensible .NET Standard data synchronization service to aid in mobile and offline application development.</description>
+
+    <dependencies>
+      <group>
+        <dependency id="opennetcf-extensions-standard" version="1.0.17160"/>
+        <dependency id="opennetcf-rescpnnector" version="1.0.17160"/>
+      </group>
+    </dependencies>
+    </metadata>
+    <files>
+        <!-- .NET Standard 1.1 -->
+    <file src=".\OpenNETCF.DFDS\bin\Release\OpenNETCF.DFDS.dll" target="lib\netstandard1.1" />
+
+    </files>
+</package>
