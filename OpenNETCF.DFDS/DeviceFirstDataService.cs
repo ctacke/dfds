@@ -26,6 +26,7 @@ namespace OpenNETCF.Data
                 .Check();
 
             settings.LocalStore.Parent = this;
+            settings.RemoteStore.Parent = this;
 
             TypeIdentifierRegistrations = new Dictionary<Type, PropertyInfo>();
             m_settings = settings;

@@ -10,6 +10,8 @@ namespace OpenNETCF.DFDS.Test
 {
     public class NopRemoteStore : IDfdsRemoteStore
     {
+        public DeviceFirstDataService Parent { get; set; }
+
         public object[] GetMultiple(Type entityType, DateTime? lastRequest)
         {
             return null;

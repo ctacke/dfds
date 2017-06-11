@@ -34,12 +34,27 @@ namespace OpenNETCF.DFDS.Test
         private RestConnector m_connector;
         private Dictionary<Type, string> m_registeredEndpoints;
         private IDfdsSerializer m_serializer;
+        private DeviceFirstDataService m_dfds;
 
         public RestBasedStore(string apiRoot, IDfdsSerializer serializer)
         {
             m_connector = new RestConnector(apiRoot);
             m_serializer = serializer;
             m_registeredEndpoints = new Dictionary<Type, string>();
+        }
+
+        public DeviceFirstDataService Parent
+        {
+            get { return m_dfds; }
+            set
+            {
+                Validate
+                    .Begin()
+                    .ParameterIsNotNull(value, "value")
+                    .Check();
+
+                m_dfds = value;
+            }
         }
 
         public void RegisterEndpoint<T>(string path)
@@ -55,6 +70,23 @@ namespace OpenNETCF.DFDS.Test
                 if (!m_registeredEndpoints.ContainsKey(t))
                 {
                     m_registeredEndpoints.Add(t, path);
+                }
+            }
+        }
+
+        private string GetEndpointForType(Type t)
+        {
+            // do we have a registered endpoint?
+            lock (m_registeredEndpoints)
+            {
+                if (m_registeredEndpoints.ContainsKey(t))
+                {
+                    return m_registeredEndpoints[t];
+                }
+                else
+                {
+                    // default to the class name is nothing is registered
+                    return t.Name;
                 }
             }
         }
@@ -94,7 +126,7 @@ namespace OpenNETCF.DFDS.Test
 
         public void Insert<T>(T item)
         {
-            // TODO: POST
+            // POST
             var t = typeof(T);
 
             var endpoint = GetEndpointForType(t);
@@ -103,25 +135,18 @@ namespace OpenNETCF.DFDS.Test
             m_connector.Post(endpoint, payload);
         }
 
-        private string GetEndpointForType(Type t)
-        {
-            // do we have a registered endpoint?
-            lock (m_registeredEndpoints)
-            {
-                if (m_registeredEndpoints.ContainsKey(t))
-                {
-                    return m_registeredEndpoints[t];
-                }
-                else
-                {
-                    // default to the class name is nothing is registered
-                    return t.Name;
-                }
-            }
-        }
         public void Update<T>(T item)
         {
-            // TODO: PUT
+            // PUT
+            var t = item.GetType();
+
+            var endpoint = GetEndpointForType(t);
+            // append the ID
+            endpoint += "/" + Parent.GetEntityIdentifier(item).ToString();
+
+            var payload = m_serializer.Serialize(item);
+
+            m_connector.Put(endpoint, payload);
         }
     }
 }

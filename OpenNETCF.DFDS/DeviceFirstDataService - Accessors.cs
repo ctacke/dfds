@@ -26,6 +26,22 @@ namespace OpenNETCF.Data
 
         private AutoResetEvent m_txDataRead = new AutoResetEvent(false);
 
+        public object GetEntityIdentifier(object entity)
+        {
+            Validate
+                .Begin()
+                .ParameterIsNotNull(entity)
+                .Check();
+
+            var t = entity.GetType();
+
+            lock (TypeIdentifierRegistrations)
+            {
+                var identifierProperty = TypeIdentifierRegistrations[t];
+                return identifierProperty.GetValue(entity);
+            }
+        }
+
         public async Task<T> GetSingleAsync<T>(object identifier)
             where T : class, new()
         {

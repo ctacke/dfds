@@ -13,7 +13,7 @@ namespace OpenNETCF.DFDS.Test
 {
     public static class SimpleServerMethods
     {
-        private static List<Person> people = new List<Person>();
+        internal static List<Person> People { get; private set; } = new List<Person>();
 
         static SimpleServerMethods()
         {
@@ -24,9 +24,9 @@ namespace OpenNETCF.DFDS.Test
 
         private static void AddPerson(Person p)
         {
-            p.PersonID = people.Count + 1;
-            p.Added = DateTime.Now;
-            people.Add(p);
+            p.PersonID = People.Count + 1;
+            p.LastChanged = DateTime.Now;
+            People.Add(p);
         }
 
         internal static string InsertAfterGetMultiplePeople(HttpListenerRequest request)
@@ -44,11 +44,11 @@ namespace OpenNETCF.DFDS.Test
             {
                 if (since.HasValue)
                 {
-                    return JsonConvert.SerializeObject(people.Where(p => p.Added >= since.Value));
+                    return JsonConvert.SerializeObject(People.Where(p => p.LastChanged >= since.Value));
                 }
                 else
                 {
-                    var result = JsonConvert.SerializeObject(people);
+                    var result = JsonConvert.SerializeObject(People);
 
                     AddPerson(new Person("Johnny Come Lately"));
 
@@ -71,17 +71,31 @@ namespace OpenNETCF.DFDS.Test
                 since = DateTime.Parse(sinceText);
             }
 
-            var url = request.Url.AbsolutePath;
-            if (string.Compare(url, "/person", true) == 0)
+            if (request.Url.Segments.Length == 0) return null;
+
+            switch (request.Url.Segments.Length)
             {
-                var result = JsonConvert.SerializeObject(people);
-                return result;
+                case 2:
+                    if (string.Compare(request.Url.Segments[1], "person", true) == 0)
+                    {
+                        var result = JsonConvert.SerializeObject(People);
+                        return result;
+                    }
+                    break;
+                case 3:
+                    if (string.Compare(request.Url.Segments[1], "person", true) == 0)
+                    {
+                        var id = Convert.ToInt32(request.Url.Segments[2]);
+                        var person = People.FirstOrDefault(p => p.PersonID == id);
+                        if (person == null) return null;
+                        var result = JsonConvert.SerializeObject(person);
+                        return result;
+                    }
+                    break;
+
             }
-            else
-            {
-                return null;
-            }
-        }
+            return null;
+       }
 
         internal static string PostPeople(HttpListenerRequest request)
         {
@@ -93,6 +107,25 @@ namespace OpenNETCF.DFDS.Test
             }
 
                 return string.Empty;
+        }
+
+        internal static string PutPerson(HttpListenerRequest request)
+        {
+            using (var reader = new StreamReader(request.InputStream))
+            {
+                var data = reader.ReadToEnd();
+                var person = JsonConvert.DeserializeObject<Person>(data);
+
+                var existing = People.FirstOrDefault(p => person.PersonID == p.PersonID);
+
+                if (existing != null)
+                {
+                    existing.Name = person.Name;
+                    existing.LastChanged = DateTime.Now;
+                }
+            }
+
+            return string.Empty;
         }
     }
 }

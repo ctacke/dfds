@@ -9,6 +9,8 @@ namespace OpenNETCF.Data
 {
     public interface IDfdsRemoteStore
     {
+        DeviceFirstDataService Parent { get; set; }
+
         /// <summary>
         /// Requests an array of Entities from the store to be *appended* to the DFDS local store
         /// </summary>

@@ -9,7 +9,7 @@ namespace OpenNETCF.DFDS.Test
     {
         public Person()
         {
-            Added = DateTime.Now;
+            LastChanged = DateTime.Now;
         }
 
         public Person(string name)
@@ -21,6 +21,6 @@ namespace OpenNETCF.DFDS.Test
         public string Name { get; set; }
 
         [DoNotSerialize]
-        public DateTime Added { get; set; }
+        public DateTime LastChanged { get; set; }
     }
 }
