@@ -100,7 +100,7 @@ namespace OpenNETCF.Data
 
             lock (m_deleteBuffers)
             {
-                if (!m_transmitBuffers.ContainsKey(t))
+                if (!m_deleteBuffers.ContainsKey(t))
                 {
 
                     // TODO: account for non-default buffer depth
@@ -190,17 +190,27 @@ namespace OpenNETCF.Data
         }
 
         public void RemoveAll<T>()
-            where T : class
+            where T : class, new()
         {
+            var items = LocalStore.GetMultiple<T>();
+            foreach (var item in items)
+            {
+                QueueForDelete(item);
+            }
+
             m_settings.LocalStore.RemoveAll<T>();
-            // TODO: remote sync
         }
 
         public async Task RemoveAllAsync<T>()
-            where T : class
+            where T : class, new()
         {
+            var items = LocalStore.GetMultiple<T>();
+            foreach (var item in items)
+            {
+                QueueForDelete(item);
+            }
+
             await m_settings.LocalStore.RemoveAllAsync<T>();
-            // TODO: remote sync
         }
 
         public int Count<T>()

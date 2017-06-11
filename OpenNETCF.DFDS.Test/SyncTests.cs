@@ -295,5 +295,63 @@ namespace OpenNETCF.DFDS.Test
                 Assert.AreEqual(2, settings.LocalStore.Count<Person>());
             }
         }
+
+        [TestMethod]
+        public void SyncLocalDeleteAll()
+        {
+            var serverUri = "http://localhost:8081";
+            SimpleServerMethods.ResetData();
+
+            using (var server = new SimpleServer(serverUri,
+                getMethod: SimpleServerMethods.GetMultiplePeople,
+                deleteMethod: SimpleServerMethods.DeletePerson))
+            {
+                server.Start();
+
+                DfdsJsonSerializer serializer = new DfdsJsonSerializer();
+
+                var settings = new DfdsServiceSettings();
+                settings.DefaultSyncPeriodSeconds = 5;
+
+                settings.LocalStore = new MemoryStore();
+                settings.RemoteStore = new RestBasedStore(serverUri, serializer);
+
+                bool syncComplete = false;
+
+                var svc = new DeviceFirstDataService(settings);
+                svc.SyncCompleted += delegate { syncComplete = true; };
+
+                svc.Register<Person>("PersonID");
+                // local store will be empty
+                Assert.AreEqual(0, settings.LocalStore.Count<Person>());
+
+                // when sync happens, we'll have 3
+                while (!syncComplete)
+                {
+                    Thread.Sleep(500);
+                }
+                syncComplete = false;
+
+                svc.RemoveAll<Person>();
+                Assert.AreEqual(0, settings.LocalStore.Count<Person>());
+
+                // wait for the change to sync
+                while (!syncComplete)
+                {
+                    Thread.Sleep(500);
+                }
+                syncComplete = false;
+
+                Assert.AreEqual(0, SimpleServerMethods.People.Count());
+                Assert.AreEqual(0, settings.LocalStore.Count<Person>());
+
+                while (!syncComplete)
+                {
+                    Thread.Sleep(500);
+                }
+
+                Assert.AreEqual(0, settings.LocalStore.Count<Person>());
+            }
+        }
     }
 }
