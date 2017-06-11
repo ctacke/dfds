@@ -17,6 +17,12 @@ namespace OpenNETCF.DFDS.Test
 
         static SimpleServerMethods()
         {
+            ResetData();
+        }
+
+        public static void ResetData()
+        {
+            People.Clear();
             AddPerson(new Person("John Doe"));
             AddPerson(new Person("Jane Doe"));
             AddPerson(new Person("Marie Smith"));
@@ -83,7 +89,7 @@ namespace OpenNETCF.DFDS.Test
                     }
                     break;
                 case 3:
-                    if (string.Compare(request.Url.Segments[1], "person", true) == 0)
+                    if (string.Compare(request.Url.Segments[1], "person/", true) == 0)
                     {
                         var id = Convert.ToInt32(request.Url.Segments[2]);
                         var person = People.FirstOrDefault(p => p.PersonID == id);
@@ -126,6 +132,27 @@ namespace OpenNETCF.DFDS.Test
             }
 
             return string.Empty;
+        }
+
+        internal static string DeletePerson(HttpListenerRequest request)
+        {
+            if (request.Url.Segments.Length == 0) return null;
+
+            switch (request.Url.Segments.Length)
+            {
+                case 3:
+                    if (string.Compare(request.Url.Segments[1], "person/", true) == 0)
+                    {
+                        var id = Convert.ToInt32(request.Url.Segments[2]);
+                        var person = People.FirstOrDefault(p => p.PersonID == id);
+                        if (person == null) return null;
+                        People.Remove(person);
+                        return "{ \"result\":\"deleted\" }";
+                    }
+                    break;
+
+            }
+            return "{ \"result\":\"not allowed\" }";
         }
     }
 }

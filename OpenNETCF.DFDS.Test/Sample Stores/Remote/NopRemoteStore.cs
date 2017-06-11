@@ -12,6 +12,10 @@ namespace OpenNETCF.DFDS.Test
     {
         public DeviceFirstDataService Parent { get; set; }
 
+        public void Delete<T>(T item)
+        {
+        }
+
         public object[] GetMultiple(Type entityType, DateTime? lastRequest)
         {
             return null;

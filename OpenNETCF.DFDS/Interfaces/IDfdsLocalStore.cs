@@ -21,6 +21,7 @@ namespace OpenNETCF.Data
 
         void Insert<T>(T item);
         void Update<T>(T item);
+        void Delete<T>(T item);
     }
 
     public interface IDfdsLocalStore

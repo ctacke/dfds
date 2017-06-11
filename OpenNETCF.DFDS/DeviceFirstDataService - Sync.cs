@@ -66,6 +66,8 @@ namespace OpenNETCF.Data
 
         private void SyncType(Type t)
         {
+            SendDeletes(t);
+
             switch (m_settings.SyncBehavior)
             {
                 case SyncBehavior.PullThenPush:
@@ -85,6 +87,43 @@ namespace OpenNETCF.Data
             }
         }
 
+        private void SendDeletes(Type t)
+        {
+            Type[] typeList;
+
+            // get a copy of the types - don't lock that buffer for too long
+            lock (m_deleteBuffers)
+            {
+                typeList = m_deleteBuffers.Keys.ToArray();
+            }
+
+            if (!typeList.Contains(t))
+            {
+                // no pending deletes
+                return;
+            }
+
+            while (m_deleteBuffers[t].Count > 0)
+            {
+                try
+                {
+                    // we Peek and Dequeue on uccess to keep the items in the original order rather than Dequeue and Enqueue on fail
+                    var entity = m_deleteBuffers[t].Peek();
+                    RemoteStore.Delete(entity);
+                    m_deleteBuffers[t].Dequeue();
+                }
+                catch
+                {
+                    // leave it in the queue, but abandon syncing this type
+
+                    // TODO: add in some form of notification that this happened
+
+                    break;
+                }
+            }
+
+        }
+
         private void PushType(Type t)
         {
             Type[] typeList;
@@ -97,33 +136,36 @@ namespace OpenNETCF.Data
                 typeList = m_transmitBuffers.Keys.ToArray();
             }
 
-            foreach (var type in typeList)
+            if (!typeList.Contains(t))
             {
-                while (m_transmitBuffers[type].Count > 0)
+                // no pending items
+                return;
+            }
+
+            while (m_transmitBuffers[t].Count > 0)
+            {
+                try
                 {
-                    try
-                    {
-                        // we Peek and Dequeue on uccess to keep the items in the original order rather than Dequeue and Enqueue on fail
-                        var entity = m_transmitBuffers[type].Peek();
+                    // we Peek and Dequeue on uccess to keep the items in the original order rather than Dequeue and Enqueue on fail
+                    var entity = m_transmitBuffers[t].Peek();
 
-                        if (entity.IsInsert)
-                        {
-                            RemoteStore.Insert(entity.Entity);
-                        }
-                        else
-                        {
-                            RemoteStore.Update(entity.Entity);
-                        }
-                        m_transmitBuffers[type].Dequeue();
-                    }
-                    catch
+                    if (entity.IsInsert)
                     {
-                        // leave it in the queue, but abandon syncing this type
-                        
-                        // TODO: add in some form of notification that this happened
-
-                        break;
+                        RemoteStore.Insert(entity.Entity);
                     }
+                    else
+                    {
+                        RemoteStore.Update(entity.Entity);
+                    }
+                    m_transmitBuffers[t].Dequeue();
+                }
+                catch
+                {
+                    // leave it in the queue, but abandon syncing this type
+
+                    // TODO: add in some form of notification that this happened
+
+                    break;
                 }
             }
         }

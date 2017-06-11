@@ -10,19 +10,21 @@ namespace OpenNETCF.Data
 {
     public partial class DeviceFirstDataService : DisposableBase
 	{
+
         private class TransmitObject
         {
             public TransmitObject(object entity, bool isInsert)
             {
                 Entity = entity;
-                IsInsert = isInsert;
+                IsInsert = IsInsert;
             }
 
-            public bool IsInsert { get; set; }
             public object Entity { get; set; }
+            public bool IsInsert { get; set; }
         }
 
         private Dictionary<Type, CircularBuffer<TransmitObject>> m_transmitBuffers = new Dictionary<Type, CircularBuffer<TransmitObject>>();
+        private Dictionary<Type, CircularBuffer<object>> m_deleteBuffers = new Dictionary<Type, CircularBuffer<object>>();
 
         private AutoResetEvent m_txDataRead = new AutoResetEvent(false);
 
@@ -92,6 +94,25 @@ namespace OpenNETCF.Data
             return item;
         }
 
+        private void QueueForDelete(object item)
+        {
+            var t = item.GetType();
+
+            lock (m_deleteBuffers)
+            {
+                if (!m_transmitBuffers.ContainsKey(t))
+                {
+
+                    // TODO: account for non-default buffer depth
+                    m_deleteBuffers.Add(t, new CircularBuffer<object>(m_settings.DefaultSendBufferDepth));
+                    // TODO: add high-water event watcher to force send, even if outside of a sync period
+                }
+
+                m_deleteBuffers[t].Enqueue(item);
+                m_txDataRead.Set();
+            }
+        }
+
         private void QueueForTransmit(object item, bool isInsert)
         {
             var t = item.GetType();
@@ -125,14 +146,17 @@ namespace OpenNETCF.Data
         }
 
         public void Remove<T>(object identifier)
+            where T : class, new()
         {
             Validate
                 .Begin()
                 .ParameterIsNotNull(identifier, "identifier")
                 .Check();
 
+            var item = LocalStore.GetSingle<T>(identifier);
             var pi = TypeIdentifierRegistrations[typeof(T)];
             m_settings.LocalStore.Remove<T>(pi, identifier);
+            QueueForDelete(item);
         }
 
         public async Task RemoveAsync<T>(T item)
@@ -147,10 +171,11 @@ namespace OpenNETCF.Data
             var pi = TypeIdentifierRegistrations[item.GetType()];
             var identifier = pi.GetValue(item);
             await RemoveAsync<T>(identifier);
+            QueueForDelete(item);
         }
 
         public void Remove<T>(T item)
-            where T : class
+            where T : class, new()
         {
             Validate
                 .Begin()
@@ -161,18 +186,21 @@ namespace OpenNETCF.Data
             var pi = TypeIdentifierRegistrations[item.GetType()];
             var identifier = pi.GetValue(item);
             Remove<T>(identifier);
+            QueueForDelete(item);
         }
 
         public void RemoveAll<T>()
             where T : class
         {
             m_settings.LocalStore.RemoveAll<T>();
+            // TODO: remote sync
         }
 
         public async Task RemoveAllAsync<T>()
             where T : class
         {
             await m_settings.LocalStore.RemoveAllAsync<T>();
+            // TODO: remote sync
         }
 
         public int Count<T>()

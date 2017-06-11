@@ -148,5 +148,15 @@ namespace OpenNETCF.DFDS.Test
 
             m_connector.Put(endpoint, payload);
         }
+
+        public void Delete<T>(T item)
+        {
+            var t = item.GetType();
+            var endpoint = GetEndpointForType(t);
+            // append the ID
+            endpoint += "/" + Parent.GetEntityIdentifier(item).ToString();
+            m_connector.Delete(endpoint);
+        }
+
     }
 }
